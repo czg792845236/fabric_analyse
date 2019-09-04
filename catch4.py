@@ -114,16 +114,16 @@ def get_iw(address, lower, upper):
 
     global timer
     global callback
-    global y_count
-    y_count += 1
-    if y_count > 80:
-        y_count = 0
-        tmp = (5000,)
-    elif y_count > 40:
-        tmp = (15000,)
-    else:
-        tmp = (5000,)
-    #tmp = master.execute(slave=1,function_code=md.READ_INPUT_REGISTERS,starting_address=address,quantity_of_x=1)
+    # global y_count
+    # y_count += 1
+    # if y_count > 80:
+    #     y_count = 0
+    #     tmp = (5000,)
+    # elif y_count > 40:
+    #     tmp = (15000,)
+    # else:
+    #     tmp = (5000,)
+    tmp = master.execute(slave=1,function_code=md.READ_INPUT_REGISTERS,starting_address=address,quantity_of_x=1)
     return tmp, tmp in range(lower, upper + 1)
 
 
@@ -156,7 +156,7 @@ TIME_COUNT_FLAG = 0
 def OnTimer(ax):
     global TIME_COUNT_FLAG
     TIME_COUNT_FLAG += 1
-    if TIME_COUNT_FLAG > 600:  # 1 min
+    if TIME_COUNT_FLAG > 3000:  # 5 min
         TIME_COUNT_FLAG = 0
         sem_save.release()
 
@@ -210,9 +210,9 @@ if __name__ == '__main__':
     df = pd.DataFrame()
     df.to_csv(FILE_PATH,index=False,header=False)
     del df
-    # master = mt.TcpMaster("192.168.1.211",502)
-    # # master = mt.TcpMaster("192.168.1.66",502)
-    # master.set_timeout(3.0)
+    master = mt.TcpMaster("192.168.1.211",502)
+    # master = mt.TcpMaster("192.168.1.66",502)
+    master.set_timeout(3.0)
     mod_t = threading.Thread(target=modbus_thread, name='modbus tcp')
     mod_t.start()
     save_t = threading.Thread(target=save_csv, name='save data')
