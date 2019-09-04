@@ -10,7 +10,6 @@ import time
 import pandas as pd
 FILE_PATH = "d:\\file.csv"
 POINTS = 300
-# 暂停的时候应该把本地数据读出来，或者全屏的时候把本地数据读出来
 
 fig, ax = plt.subplots()
 ax.set_ylim([0, 20000])
@@ -46,6 +45,7 @@ class Index(object):
         if text == "stop":
             timer.stop()
             bpause.label.set_text("start")
+            bfull.set_active(True)
             ax.set_xlim([len(user)-POINTS, len(user)])
 
             l_user.set_data(range(len(user)), user)
@@ -63,6 +63,7 @@ class Index(object):
                     pass
             ax.figure.canvas.draw()
         else:
+            bfull.set_active(False)
             timer.start()
             bpause.label.set_text("stop")
             l_user.set_xdata(range(POINTS))
@@ -72,15 +73,6 @@ class Index(object):
             ax.set_xlim([0, POINTS])
 
     def full(self, event):
-        # if len(user) > 300:
-        #     ax.set_xlim([300, len(user)])
-        #     l_user.set_data(range(300, len(user)), user[300:])
-        #     l_user2.set_data(range(300, len(user2)), user2[300:])
-        #     l_user3.set_data(range(300, len(user3)), user3[300:])
-        #     l_user4.set_data(range(300, len(user4)), user4[300:])
-        text = bpause.label.get_text()
-        if text == 'stop':
-            self.pause(0)
         df1 = pd.read_csv(FILE_PATH)
         if len(df1.values) > POINTS:
             print("in len > 0")
@@ -115,6 +107,7 @@ bpause.on_clicked(callback.pause)
 axfull = plt.axes([0.92, 0.1, 0.075, 0.075])
 bfull = Button(axfull, 'full')
 bfull.on_clicked(callback.full)
+bfull.set_active(False)
 
 
 y_count = 0
@@ -138,7 +131,7 @@ def get_iw(address, lower, upper):
 
 
 sem_save = threading.Semaphore(value=0)
-
+sem_user_modify = threading.Semaphore(value=1)
 
 def save_csv():
     global user, user2, user3, user4
@@ -154,10 +147,16 @@ def save_csv():
         df['ai14'] = user4[:-POINTS]
         df.to_csv(FILE_PATH, mode='a', index=False, header=False)
         del df
-        user = user[-POINTS:]
-        user2 = user2[-POINTS:]
-        user3 = user3[-POINTS:]
-        user4 = user4[-POINTS:]
+        # user = user[-POINTS:]
+        # user2 = user2[-POINTS:]
+        # user3 = user3[-POINTS:]
+        # user4 = user4[-POINTS:]
+        sem_user_modify.acquire()
+        del user[:-POINTS]
+        del user2[:-POINTS]
+        del user3[:-POINTS]
+        del user4[:-POINTS]
+        sem_user_modify.release()
 
 
 TIME_COUNT_FLAG = 0
@@ -166,7 +165,7 @@ TIME_COUNT_FLAG = 0
 def OnTimer(ax):
     global TIME_COUNT_FLAG
     TIME_COUNT_FLAG += 1
-    if TIME_COUNT_FLAG > 3000:  # 5 min
+    if TIME_COUNT_FLAG > 300:  # 5 min
         TIME_COUNT_FLAG = 0
         sem_save.release()
 
@@ -202,11 +201,12 @@ def modbus_thread():
         tmp2, b1 = get_iw(8, 4302, 13292)
         tmp3, b2 = get_iw(9, 4311, 13307)
         tmp4, b3 = get_iw(13, 4315, 13310)
+        sem_user_modify.acquire()
         user.append(tmp[0])
         user2.append(tmp2[0])
         user3.append(tmp3[0])
         user4.append(tmp4[0])
-
+        sem_user_modify.release()
         if b or b1 or b2 or b3:
             pass
             # callback.pause(0)
