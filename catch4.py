@@ -10,7 +10,7 @@ import time
 import pandas as pd
 FILE_PATH = "d:\\file.csv"
 POINTS = 300
-#暂停的时候应该把本地数据读出来，或者全屏的时候把本地数据读出来
+# 暂停的时候应该把本地数据读出来，或者全屏的时候把本地数据读出来
 
 fig, ax = plt.subplots()
 ax.set_ylim([0, 20000])
@@ -78,22 +78,32 @@ class Index(object):
         #     l_user2.set_data(range(300, len(user2)), user2[300:])
         #     l_user3.set_data(range(300, len(user3)), user3[300:])
         #     l_user4.set_data(range(300, len(user4)), user4[300:])
+        text = bpause.label.get_text()
+        if text == 'stop':
+            self.pause(0)
         df1 = pd.read_csv(FILE_PATH)
-        ax.set_xlim([300,len(df1.iloc[:,0])])
-        l_user.set_data(range(300, len(df1.iloc[:,0])), df1.iloc[300:,0])
-        l_user2.set_data(range(300, len(df1.iloc[:,1])), df1.iloc[300:,1])
-        l_user3.set_data(range(300, len(df1.iloc[:,2])), df1.iloc[300:,2])
-        l_user4.set_data(range(300, len(df1.iloc[:,3])), df1.iloc[300:,3])
-        while True:
-            try:
-                ax.draw_artist(l_user)
-                ax.draw_artist(l_user2)
-                ax.draw_artist(l_user3)
-                ax.draw_artist(l_user4)
-                break
-            except:
-                pass
-        ax.figure.canvas.draw()
+        if len(df1.values) > POINTS:
+            print("in len > 0")
+            ax.set_xlim([POINTS, len(df1.iloc[:, 0])])
+            l_user.set_data(
+                range(POINTS, len(df1.iloc[:, 0])), df1.iloc[POINTS:, 0])
+            l_user2.set_data(
+                range(POINTS, len(df1.iloc[:, 1])), df1.iloc[POINTS:, 1])
+            l_user3.set_data(
+                range(POINTS, len(df1.iloc[:, 2])), df1.iloc[POINTS:, 2])
+            l_user4.set_data(
+                range(POINTS, len(df1.iloc[:, 3])), df1.iloc[POINTS:, 3])
+            while True:
+                try:
+                    ax.draw_artist(l_user)
+                    ax.draw_artist(l_user2)
+                    ax.draw_artist(l_user3)
+                    ax.draw_artist(l_user4)
+                    break
+                except:
+                    pass
+            ax.figure.canvas.draw()
+        del df1
 
 
 callback = Index()
@@ -114,16 +124,16 @@ def get_iw(address, lower, upper):
 
     global timer
     global callback
-    # global y_count
-    # y_count += 1
-    # if y_count > 80:
-    #     y_count = 0
-    #     tmp = (5000,)
-    # elif y_count > 40:
-    #     tmp = (15000,)
-    # else:
-    #     tmp = (5000,)
-    tmp = master.execute(slave=1,function_code=md.READ_INPUT_REGISTERS,starting_address=address,quantity_of_x=1)
+    global y_count
+    y_count += 1
+    if y_count > 80:
+        y_count = 0
+        tmp = (5000,)
+    elif y_count > 40:
+        tmp = (15000,)
+    else:
+        tmp = (5000,)
+    # tmp = master.execute(slave=1,function_code=md.READ_INPUT_REGISTERS,starting_address=address,quantity_of_x=1)
     return tmp, tmp in range(lower, upper + 1)
 
 
@@ -208,11 +218,11 @@ def modbus_thread():
 if __name__ == '__main__':
     RUN_FLAG = 1
     df = pd.DataFrame()
-    df.to_csv(FILE_PATH,index=False,header=False)
+    df.to_csv(FILE_PATH, index=False, header=False)
     del df
-    master = mt.TcpMaster("192.168.1.211",502)
-    # master = mt.TcpMaster("192.168.1.66",502)
-    master.set_timeout(3.0)
+    # master = mt.TcpMaster("192.168.1.211",502)
+    # # master = mt.TcpMaster("192.168.1.66",502)
+    # master.set_timeout(3.0)
     mod_t = threading.Thread(target=modbus_thread, name='modbus tcp')
     mod_t.start()
     save_t = threading.Thread(target=save_csv, name='save data')
