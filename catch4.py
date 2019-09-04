@@ -72,12 +72,18 @@ class Index(object):
             ax.set_xlim([0, POINTS])
 
     def full(self, event):
-        if len(user) > 300:
-            ax.set_xlim([300, len(user)])
-            l_user.set_data(range(300, len(user)), user[300:])
-            l_user2.set_data(range(300, len(user2)), user2[300:])
-            l_user3.set_data(range(300, len(user3)), user3[300:])
-            l_user4.set_data(range(300, len(user4)), user4[300:])
+        # if len(user) > 300:
+        #     ax.set_xlim([300, len(user)])
+        #     l_user.set_data(range(300, len(user)), user[300:])
+        #     l_user2.set_data(range(300, len(user2)), user2[300:])
+        #     l_user3.set_data(range(300, len(user3)), user3[300:])
+        #     l_user4.set_data(range(300, len(user4)), user4[300:])
+        df1 = pd.read_csv(FILE_PATH)
+        ax.set_xlim([300,len(df1.iloc[:,0])])
+        l_user.set_data(range(300, len(df1.iloc[:,0])), df1.iloc[300:,0])
+        l_user2.set_data(range(300, len(df1.iloc[:,1])), df1.iloc[300:,1])
+        l_user3.set_data(range(300, len(df1.iloc[:,2])), df1.iloc[300:,2])
+        l_user4.set_data(range(300, len(df1.iloc[:,3])), df1.iloc[300:,3])
         while True:
             try:
                 ax.draw_artist(l_user)
@@ -150,7 +156,7 @@ TIME_COUNT_FLAG = 0
 def OnTimer(ax):
     global TIME_COUNT_FLAG
     TIME_COUNT_FLAG += 1
-    if TIME_COUNT_FLAG > 3600:  # 6 min
+    if TIME_COUNT_FLAG > 600:  # 1 min
         TIME_COUNT_FLAG = 0
         sem_save.release()
 
@@ -201,7 +207,9 @@ def modbus_thread():
 
 if __name__ == '__main__':
     RUN_FLAG = 1
-
+    df = pd.DataFrame()
+    df.to_csv(FILE_PATH,index=False,header=False)
+    del df
     # master = mt.TcpMaster("192.168.1.211",502)
     # # master = mt.TcpMaster("192.168.1.66",502)
     # master.set_timeout(3.0)
